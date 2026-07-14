@@ -993,10 +993,7 @@ rank = get_user_rank(
 
     # Prestige stars
 
-    stars = "⭐" * user.get(
-        "prestige",
-        0
-    )
+stars = "⭐" * int(user.get("prestige", 0))
 
 
     if stars == "":
