@@ -934,49 +934,33 @@ async def create_profile_card(member, user):
 
 
     if status:
-
         draw.text(
-
             (260,140),
-
             status,
-
             fill=(230,230,230),
-
             font=small_font
-
         )
 
 
 
     # Level
 
-    draw.text(
-
-        (60,300),
-
-        f"Level {user['level']}",
-
-        fill="white",
-
-        font=font
-
-    )
+draw.text(
+    (260,140),
+    status,
+    fill=(230,230,230),
+    font=small_font
+)
 
 
 
     # XP
 
     draw.text(
-
         (60,350),
-
         f"XP: {user['xp']}",
-
         fill="white",
-
         font=font
-
     )
 
 
@@ -984,15 +968,10 @@ async def create_profile_card(member, user):
     # Messages
 
     draw.text(
-
         (60,420),
-
         f"Messages: {user['messages']}",
-
         fill="white",
-
         font=font
-
     )
 
 
@@ -1823,6 +1802,4 @@ async def help(ctx):
         embed=embed
     )
 
-print("Starting bot...")
 bot.run(TOKEN)
-        
