@@ -1038,7 +1038,6 @@ draw.text(
     fill="white",
     font=small_font
 )
-
 return image
 
 
