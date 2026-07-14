@@ -494,7 +494,10 @@ async def rank(ctx):
 # PROFILE CARD
 # ==========================
 
-    async def download_image(url):
+PROFILE_BACKGROUND = "https://cdn.discordapp.com/attachments/1506965953492291605/1526406076063289494/927de7134c3fe3859fe18946867366ec.jpg"
+
+
+async def download_image(url):
 
     async with aiohttp.ClientSession() as session:
 
@@ -508,7 +511,6 @@ async def rank(ctx):
         "RGB"
     )
 
-    PROFILE_BACKGROUND = "https://cdn.discordapp.com/attachments/1506965953492291605/1526406076063289494/927de7134c3fe3859fe18946867366ec.jpg"
 
 async def create_profile_card(member, user):
 
@@ -519,9 +521,6 @@ async def create_profile_card(member, user):
     image = image.resize(
         (900,900)
     )
-
-    draw = ImageDraw.Draw(image)
-
 
     draw = ImageDraw.Draw(image)
 
@@ -548,8 +547,6 @@ async def create_profile_card(member, user):
         title_font = None
         font = None
         small_font = None
-
-
 
     draw.text(
         (260,80),
