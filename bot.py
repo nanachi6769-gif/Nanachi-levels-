@@ -29,11 +29,24 @@ def save_data(data):
         json.dump(data, f, indent=4)
 
 
-# Level curve
-# 20 XP per message
-# Level 100 ≈ 250,000 messages
-def xp_needed(level):
-    return int(500 * (level ** 2))
+def xp_needed_for_level(level):
+    if level <= 0:
+        return 0
+
+    if level == 1:
+        return 100
+
+    if level == 100:
+        return 10000
+
+    if level <= 70:
+        return int(100 + (0.495 * (level ** 2)))
+
+    return int(
+        100
+        + (0.495 * (level ** 2))
+        + (4.9 * ((level - 70) ** 1.8))
+    )
 
 
 def get_user(data, guild_id, user_id):
@@ -77,8 +90,8 @@ async def on_message(message):
     user["messages"] += 1
     user["xp"] += 20
 
-    while user["xp"] >= xp_needed(user["level"]):
-        user["xp"] -= xp_needed(user["level"])
+    while user["xp"] >= xp_needed_for_level(user["level"]):
+        user["xp"] -= xp_needed_for_level(user["level"])
         user["level"] += 1
 
         await message.channel.send(
@@ -114,7 +127,7 @@ async def level(ctx, member: discord.Member = None):
     xp = user["xp"]
     messages = user["messages"]
 
-    needed = xp_needed(current_level)
+    needed = xp_needed_for_level(current_level)
 
     remaining_xp = max(0, needed - xp)
 
