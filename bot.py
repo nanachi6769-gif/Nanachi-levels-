@@ -1032,13 +1032,15 @@ else:
         badge_text = "No badges"
 
 
-draw.text(
-    (60, 640),
-    f"Badges: {badge_text}",
-    fill="white",
-    font=small_font
-)
-return image
+def create_card():
+    draw.text(
+        (60, 640),
+        f"Badges: {badge_text}",
+        fill="white",
+        font=small_font
+    )
+
+    return image
 
 
 
