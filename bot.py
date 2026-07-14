@@ -568,7 +568,7 @@ if leveled:
 
         if new_role:
 
-            await message.author.add_roles(new_role)
+            await message.author.remove_roles(role)
 
 
     # Send level message
