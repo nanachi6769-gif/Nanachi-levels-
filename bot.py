@@ -2,17 +2,25 @@ import discord
 from discord.ext import commands
 import json
 import os
-from PIL import Image, ImageDraw, ImageFont
 import aiohttp
 from io import BytesIO
+from PIL import Image, ImageDraw, ImageFont
 
 
 TOKEN = os.getenv("TOKEN")
 PREFIX = ","
 
+
+# ==========================
+# INTENTS
+# ==========================
+
 intents = discord.Intents.default()
+
 intents.message_content = True
 intents.members = True
+intents.guilds = True
+
 
 bot = commands.Bot(
     command_prefix=PREFIX,
@@ -22,22 +30,37 @@ bot = commands.Bot(
 
 
 # ==========================
-# DATABASE
+# FILES
 # ==========================
 
 DATA_FILE = "levels.json"
 
 
+# ==========================
+# DATABASE
+# ==========================
+
 def load_data():
+
     if not os.path.exists(DATA_FILE):
+
         return {}
 
+
     with open(DATA_FILE, "r") as file:
+
         return json.load(file)
 
 
+
+data = load_data()
+
+
+
 def save_data():
+
     with open(DATA_FILE, "w") as file:
+
         json.dump(
             data,
             file,
@@ -45,32 +68,152 @@ def save_data():
         )
 
 
-data = load_data()
+
+# ==========================
+# DEFAULT USER
+# ==========================
+
+def create_user():
+
+    return {
+
+        "level": 1,
+
+        "xp": 0,
+
+        "messages": 0,
+
+        "prestige": 0,
 
 
-def get_user(guild_id, user_id):
-    guild_id = str(guild_id)
-    user_id = str(user_id)
+        "badges": [],
 
-    if guild_id not in data:
-        data[guild_id] = {}
 
-    if user_id not in data[guild_id]:
-        data[guild_id][user_id] = {
-            "level": 1,
-            "xp": 0,
-            "messages": 0,
-            "prestige": 0,
-            "badges": [],
-            "status": ""
+        "title": "",
+
+
+        "ring": "none",
+
+
+        "theme": "default",
+
+
+        "profile_background": "",
+
+
+        "rank_background": "",
+
+
+        "rank_end": "",
+
+
+        "boosting": False,
+
+
+        "staff": False
+
+    }
+
+
+
+# ==========================
+# DEFAULT SERVER
+# ==========================
+
+def create_server():
+
+    return {
+
+        "users": {},
+
+
+        "settings": {
+
+            "level_message":
+            "{user} reached level {level}!",
+
+
+            "level_title":
+            "Level {level}",
+
+
+            "xp_channels": [],
+
+
+            "xp_category": None,
+
+
+            "level_roles": {},
+
+
+            "automod_roles": [],
+
+
+            "ai_roles": []
+
         }
 
-    return data[guild_id][user_id]
+    }
 
 
+
+# ==========================
+# GET SERVER
+# ==========================
+
+def get_server(guild_id):
+
+    guild_id = str(guild_id)
+
+
+    if guild_id not in data:
+
+        data[guild_id] = create_server()
+
+
+    return data[guild_id]
+
+
+
+# ==========================
+# GET USER
+# ==========================
+
+def get_user(guild_id, user_id):
+
+    server = get_server(guild_id)
+
+
+    user_id = str(user_id)
+
+
+    if user_id not in server["users"]:
+
+        server["users"][user_id] = create_user()
+
+
+    return server["users"][user_id]
+
+
+
+# ==========================
+# READY
+# ==========================
+
+@bot.event
+async def on_ready():
+
+    print(
+        f"✅ Logged in as {bot.user}"
+    )
+
+    print(
+        "✅ New leveling system online"
+    )
 # ==========================
 # XP SYSTEM
 # ==========================
+
 
 def xp_needed_for_level(level):
 
@@ -84,6 +227,7 @@ def xp_needed_for_level(level):
         return 10000
 
     if level <= 70:
+
         return int(
             100 + (0.495 * (level ** 2))
         )
@@ -95,119 +239,265 @@ def xp_needed_for_level(level):
     )
 
 
-def get_level_from_xp(xp):
 
-    level = 1
+# ==========================
+# LEVEL CALCULATION
+# ==========================
+
+
+def check_level(user):
+
+    level = user["level"]
+    xp = user["xp"]
+
+
+    leveled_up = False
+
 
     while level < 100:
+
         needed = xp_needed_for_level(level)
+
 
         if xp < needed:
             break
 
+
         xp -= needed
         level += 1
 
-    return level
+        leveled_up = True
 
 
-# ==========================
-# LEVEL ROLES
-# ==========================
 
-LEVEL_ROLES_FILE = "level_roles.json"
+    user["level"] = level
+    user["xp"] = xp
 
 
-def load_level_roles():
+    return leveled_up
 
-    if not os.path.exists(LEVEL_ROLES_FILE):
-        return {}
-
-    with open(LEVEL_ROLES_FILE, "r") as file:
-        return json.load(file)
-
-
-def save_level_roles():
-
-    with open(LEVEL_ROLES_FILE, "w") as file:
-        json.dump(
-            level_roles,
-            file,
-            indent=4
-        )
-
-
-level_roles = load_level_roles()
-
-
-async def give_level_role(member, old_level, new_level):
-
-    guild_id = str(member.guild.id)
-
-    if guild_id not in level_roles:
-        return
-
-    roles = level_roles[guild_id]
-
-    old_role = None
-    new_role = None
-
-    for level, role_id in roles.items():
-
-        if int(level) == old_level:
-            old_role = member.guild.get_role(
-                int(role_id)
-            )
-
-        if int(level) == new_level:
-            new_role = member.guild.get_role(
-                int(role_id)
-            )
-
-    if old_role:
-        await member.remove_roles(old_role)
-
-    if new_role:
-        await member.add_roles(new_role)
 
 
 # ==========================
-# BADGES
+# PRESTIGE SYSTEM
 # ==========================
 
-def update_badges(user):
+
+def prestige_check(user):
+
+    if user["level"] >= 100:
+
+
+        if user["prestige"] < 3:
+
+
+            user["prestige"] += 1
+
+            user["level"] = 1
+
+            user["xp"] = 0
+
+
+            return True
+
+
+    return False
+
+
+
+# ==========================
+# BADGE SYSTEM
+# ==========================
+
+
+MESSAGE_BADGES = {
+
+    1000:
+    "1K Messages",
+
+    5000:
+    "5K Messages",
+
+    20000:
+    "20K Messages"
+
+}
+
+
+
+def add_badge(user, badge):
+
+    if badge not in user["badges"]:
+
+        user["badges"].append(badge)
+
+
+
+def update_message_badges(user):
 
     messages = user["messages"]
 
-    badges = user["badges"]
 
-    if messages >= 1000 and "1K Messages" not in badges:
-        badges.append("1K Messages")
+    for amount, badge in MESSAGE_BADGES.items():
 
-    if messages >= 2000 and "2K Messages" not in badges:
-        badges.append("2K Messages")
+        if messages >= amount:
 
-    if messages >= 5000 and "5K Messages" not in badges:
-        badges.append("5K Messages")
+            add_badge(
+                user,
+                badge
+            )
 
-    if messages >= 10000 and "10K Messages" not in badges:
-        badges.append("10K Messages")
 
 
 # ==========================
-# BOT EVENTS
+# STAFF / BOOSTER BADGES
 # ==========================
 
-@bot.event
-async def on_ready():
 
-    print(
-        f"Logged in as {bot.user}"
+def update_special_badges(user):
+
+
+    if user.get("boosting"):
+
+        add_badge(
+            user,
+            "Booster"
+        )
+
+
+    if user.get("staff"):
+
+        add_badge(
+            user,
+            "Staff"
+        )
+
+
+
+# ==========================
+# LEADERBOARD BADGES
+# ==========================
+
+
+def update_leaderboard_badges(guild_id):
+
+    server = get_server(guild_id)
+
+
+    users = sorted(
+
+        server["users"].items(),
+
+        key=lambda x:
+        x[1]["xp"],
+
+        reverse=True
+
     )
 
-    print(
-        "Leveling system online!"
-    )
+
+    for index, (user_id, user) in enumerate(users, start=1):
+
+
+        # Remove old leaderboard badges
+
+        user["badges"] = [
+
+            badge for badge in user["badges"]
+
+            if badge not in [
+
+                "Top 10",
+                "Top 3",
+                "Top 1"
+
+            ]
+
+        ]
+
+
+        if index == 1:
+
+            add_badge(
+                user,
+                "Top 1"
+            )
+
+
+        elif index <= 3:
+
+            add_badge(
+                user,
+                "Top 3"
+            )
+
+
+        elif index <= 10:
+
+            add_badge(
+                user,
+                "Top 10"
+            )
+
+
+
+# ==========================
+# EARLY USER BADGE
+# ==========================
+
+
+def give_early_user_badge(user_id):
+
+    file = "early_users.json"
+
+
+    if os.path.exists(file):
+
+        with open(file, "r") as f:
+
+            early_users = json.load(f)
+
+
+    else:
+
+        early_users = []
+
+
+
+    if str(user_id) in early_users:
+
+        return True
+
+
+
+    if len(early_users) < 100:
+
+
+        early_users.append(
+            str(user_id)
+        )
+
+
+        with open(file, "w") as f:
+
+            json.dump(
+                early_users,
+                f,
+                indent=4
+            )
+
+
+        return True
+
+
+
+    return False
+
+
+
+# ==========================
+# MESSAGE XP EVENT
+# ==========================
 
 
 @bot.event
@@ -216,114 +506,770 @@ async def on_message(message):
     if message.author.bot:
         return
 
+
     if not message.guild:
         return
 
+
+
     user = get_user(
+
         message.guild.id,
+
         message.author.id
+
     )
 
-    old_level = user["level"]
 
     user["xp"] += 1
+
     user["messages"] += 1
 
-    update_badges(user)
 
-    new_level = get_level_from_xp(
-        user["xp"]
-    )
 
-    if new_level != old_level:
+    update_message_badges(user)
 
-        user["level"] = new_level
+    update_special_badges(user)
 
-        if new_level == 100:
 
-            if user["prestige"] < 3:
 
-                user["prestige"] += 1
-                user["level"] = 1
-                user["xp"] = 0
+    if give_early_user_badge(message.author.id):
 
-        await give_level_role(
-            message.author,
-            old_level,
-            new_level
+        add_badge(
+            user,
+            "Early User"
         )
+
+
+
+    leveled = check_level(user)
+
+
+    if leveled:
+
 
         await message.channel.send(
-            f"🎉 {message.author.mention} reached Level {new_level}!"
+
+            f"🎉 {message.author.mention} reached level {user['level']}!"
+
         )
+
+
+
+    if prestige_check(user):
+
+
+        await message.channel.send(
+
+            f"⭐ {message.author.mention} reached Prestige {user['prestige']}!"
+
+        )
+
+
+
+    update_leaderboard_badges(
+
+        message.guild.id
+
+    )
+
 
     save_data()
 
+
     await bot.process_commands(message)
-    # ==========================
-# RANK CARD
+
 # ==========================
+# PERMISSION CHECKS
+# ==========================
+
+
+def is_owner():
+
+    async def predicate(ctx):
+
+        return ctx.guild.owner_id == ctx.author.id
+
+    return commands.check(predicate)
+
+
+
+def is_admin():
+
+    async def predicate(ctx):
+
+        return ctx.author.guild_permissions.administrator
+
+    return commands.check(predicate)
+
+
+
+# ==========================
+# LEVEL ROLES
+# ==========================
+
+
+@bot.command()
+@is_owner()
+async def setlevelrole(ctx, level: int, role: discord.Role):
+
+    server = get_server(ctx.guild.id)
+
+
+    server["settings"]["level_roles"][str(level)] = role.id
+
+
+    save_data()
+
+
+    await ctx.send(
+        f"✅ Level {level} role set to {role.mention}"
+    )
+
+
+
+@bot.command()
+@is_owner()
+async def removelevelrole(ctx, level: int):
+
+    server = get_server(ctx.guild.id)
+
+
+    roles = server["settings"]["level_roles"]
+
+
+    if str(level) in roles:
+
+        del roles[str(level)]
+
+        save_data()
+
+
+        await ctx.send(
+            f"✅ Removed level {level} role"
+        )
+
+    else:
+
+        await ctx.send(
+            "❌ No role found"
+        )
+
+
+
+@bot.command()
+async def listlevelroles(ctx):
+
+    server = get_server(ctx.guild.id)
+
+
+    roles = server["settings"]["level_roles"]
+
+
+    if not roles:
+
+        return await ctx.send(
+            "No level roles set."
+        )
+
+
+    text = ""
+
+
+    for level, role in roles.items():
+
+        text += f"Level {level}: <@&{role}>\n"
+
+
+    await ctx.send(text)
+
+
+
+# ==========================
+# XP CHANNELS
+# ==========================
+
+
+@bot.command()
+@is_owner()
+async def setxpchannel(ctx, channel: discord.TextChannel):
+
+    server = get_server(ctx.guild.id)
+
+
+    server["settings"]["xp_channels"].append(
+        channel.id
+    )
+
+
+    save_data()
+
+
+    await ctx.send(
+        f"✅ XP enabled in {channel.mention}"
+    )
+
+
+
+@bot.command()
+async def listxpchannels(ctx):
+
+    server = get_server(ctx.guild.id)
+
+
+    channels = server["settings"]["xp_channels"]
+
+
+    if not channels:
+
+        return await ctx.send(
+            "No XP channels set."
+        )
+
+
+    await ctx.send(
+
+        "\n".join(
+            f"<#{c}>"
+            for c in channels
+        )
+
+    )
+
+
+
+# ==========================
+# XP CATEGORY
+# ==========================
+
+
+@bot.command()
+@is_owner()
+async def setxpcategory(ctx, category: discord.CategoryChannel):
+
+    server = get_server(ctx.guild.id)
+
+
+    server["settings"]["xp_category"] = category.id
+
+
+    save_data()
+
+
+    await ctx.send(
+        f"✅ XP category set to {category.name}"
+    )
+
+
+
+@bot.command()
+async def listxpcategories(ctx):
+
+    server = get_server(ctx.guild.id)
+
+
+    category = server["settings"]["xp_category"]
+
+
+    if not category:
+
+        return await ctx.send(
+            "No XP category set."
+        )
+
+
+    await ctx.send(
+        f"XP Category: <#{category}>"
+    )
+
+
+
+# ==========================
+# AUTOMOD ROLES
+# ==========================
+
+
+@bot.command()
+@is_admin()
+async def setautomodrole(ctx, role: discord.Role):
+
+    server = get_server(ctx.guild.id)
+
+
+    if role.id not in server["settings"]["automod_roles"]:
+
+        server["settings"]["automod_roles"].append(
+            role.id
+        )
+
+
+    save_data()
+
+
+    await ctx.send(
+        f"✅ AutoMod role added {role.mention}"
+    )
+
+
+
+@bot.command()
+@is_admin()
+async def removeautomodrole(ctx, role: discord.Role):
+
+    server = get_server(ctx.guild.id)
+
+
+    if role.id in server["settings"]["automod_roles"]:
+
+        server["settings"]["automod_roles"].remove(
+            role.id
+        )
+
+
+    save_data()
+
+
+    await ctx.send(
+        "✅ AutoMod role removed"
+    )
+
+
+
+@bot.command()
+async def listautomodroles(ctx):
+
+    server = get_server(ctx.guild.id)
+
+
+    roles = server["settings"]["automod_roles"]
+
+
+    if not roles:
+
+        return await ctx.send(
+            "No AutoMod roles."
+        )
+
+
+    await ctx.send(
+
+        "\n".join(
+            f"<@&{r}>"
+            for r in roles
+        )
+
+    )
+
+
+
+# ==========================
+# AI ROLES
+# ==========================
+
+
+@bot.command()
+@is_owner()
+async def setaitorole(ctx, role: discord.Role):
+
+    server = get_server(ctx.guild.id)
+
+
+    if role.id not in server["settings"]["ai_roles"]:
+
+        server["settings"]["ai_roles"].append(
+            role.id
+        )
+
+
+    save_data()
+
+
+    await ctx.send(
+        f"✅ AI role added {role.mention}"
+    )
+
+
+
+@bot.command()
+@is_owner()
+async def removeaitorole(ctx, role: discord.Role):
+
+    server = get_server(ctx.guild.id)
+
+
+    if role.id in server["settings"]["ai_roles"]:
+
+        server["settings"]["ai_roles"].remove(
+            role.id
+        )
+
+
+    save_data()
+
+
+    await ctx.send(
+        "✅ AI role removed"
+    )
+
+
+
+@bot.command()
+async def listaitoroles(ctx):
+
+    server = get_server(ctx.guild.id)
+
+
+    roles = server["settings"]["ai_roles"]
+
+
+    if not roles:
+
+        return await ctx.send(
+            "No AI roles."
+        )
+
+
+    await ctx.send(
+
+        "\n".join(
+            f"<@&{r}>"
+            for r in roles
+        )
+
+    )
+
+
+
+# ==========================
+# LEVEL MESSAGE / TITLE
+# ==========================
+
+
+@bot.command()
+async def setlevelmessage(ctx, *, message_text):
+
+    server = get_server(ctx.guild.id)
+
+
+    server["settings"]["level_message"] = message_text
+
+
+    save_data()
+
+
+    await ctx.send(
+        "✅ Level message updated"
+    )
+
+
+
+@bot.command()
+async def setleveltitle(ctx, *, title):
+
+    server = get_server(ctx.guild.id)
+
+
+    server["settings"]["level_title"] = title
+
+
+    save_data()
+
+
+    await ctx.send(
+        "✅ Level title updated"
+        )
+# ==========================
+# PROFILE CUSTOMIZATION
+# ==========================
+
+
+@bot.command()
+async def setprofilebg(ctx, url: str):
+
+    user = get_user(
+        ctx.guild.id,
+        ctx.author.id
+    )
+
+    user["profile_background"] = url
+
+    save_data()
+
+    await ctx.send(
+        "✅ Profile background updated!"
+    )
+
+
+
+@bot.command()
+async def setrankbg(ctx, url: str):
+
+    user = get_user(
+        ctx.guild.id,
+        ctx.author.id
+    )
+
+    user["rank_background"] = url
+
+    save_data()
+
+    await ctx.send(
+        "✅ Rank background updated!"
+    )
+
+
+
+@bot.command()
+async def setrankend(ctx, url: str):
+
+    user = get_user(
+        ctx.guild.id,
+        ctx.author.id
+    )
+
+    user["rank_end"] = url
+
+    save_data()
+
+    await ctx.send(
+        "✅ Rank progress ending image updated!"
+    )
+
+
+
+# ==========================
+# PROFILE RINGS
+# ==========================
+
+
+VALID_RINGS = [
+
+    "none",
+
+    "pride",
+
+    "lesbian",
+
+    "trans"
+
+]
+
+
+
+@bot.command()
+async def setring(ctx, ring: str):
+
+    ring = ring.lower()
+
+
+    if ring not in VALID_RINGS:
+
+        return await ctx.send(
+            "❌ Available rings: pride, lesbian, trans"
+        )
+
+
+    user = get_user(
+        ctx.guild.id,
+        ctx.author.id
+    )
+
+
+    user["ring"] = ring
+
+
+    save_data()
+
+
+    await ctx.send(
+        f"✅ Profile ring set to {ring}"
+    )
+
+
+
+# ==========================
+# THEMES
+# ==========================
+
+
+VALID_THEMES = [
+
+    "default",
+
+    "arcane",
+
+    "madeinabyss"
+
+]
+
+
+
+@bot.command()
+async def settheme(ctx, theme: str):
+
+    theme = theme.lower()
+
+
+    if theme not in VALID_THEMES:
+
+        return await ctx.send(
+            "❌ Themes: default, arcane, madeinabyss"
+        )
+
+
+    user = get_user(
+        ctx.guild.id,
+        ctx.author.id
+    )
+
+
+    user["theme"] = theme
+
+
+    save_data()
+
+
+    await ctx.send(
+        f"✅ Theme changed to {theme}"
+    )
+
+
+
+# ==========================
+# CUSTOM TITLE
+# ==========================
+
+
+@bot.command()
+async def settitle(ctx, *, title):
+
+    user = get_user(
+        ctx.guild.id,
+        ctx.author.id
+    )
+
+
+    user["title"] = title
+
+
+    save_data()
+
+
+    await ctx.send(
+        "✅ Profile title changed!"
+    )
+
+
+
+# ==========================
+# IMAGE DOWNLOADER
+# ==========================
+
+
+async def get_image(url):
+
+    try:
+
+        async with aiohttp.ClientSession() as session:
+
+            async with session.get(url) as response:
+
+                if response.status != 200:
+                    return None
+
+
+                image_bytes = await response.read()
+
+
+        return Image.open(
+            BytesIO(image_bytes)
+        ).convert(
+            "RGBA"
+        )
+
+
+    except:
+
+        return None
+
+
+
+# ==========================
+# CARD COLORS
+# ==========================
+
+
+ARCANE_PURPLE = (
+    238,
+    213,
+    240
+)
+
+
+DARK_BACKGROUND = (
+    20,
+    20,
+    25
+        )
+
+# ==========================
+# RANK SYSTEM
+# ==========================
+
 
 RANK_COLOR = (238, 213, 240)
 
 
-def get_user_rank(guild_id, user_id):
 
-    guild_data = data.get(
-        str(guild_id),
-        {}
-    )
+def get_rank(guild_id, user_id):
+
+    server = get_server(guild_id)
+
 
     users = sorted(
-        guild_data.items(),
+        server["users"].items(),
         key=lambda x: x[1]["xp"],
         reverse=True
     )
 
-    for index, (uid, info) in enumerate(users, start=1):
+
+    for number, (uid, info) in enumerate(users, start=1):
 
         if uid == str(user_id):
-            return index
+
+            return number
+
 
     return 0
 
 
 
-async def create_rank_card(member, user):
+# ==========================
+# FONT LOADER
+# ==========================
 
-    image = Image.new(
-        "RGB",
-        (700, 220),
-        (25, 25, 25)
-    )
 
-    draw = ImageDraw.Draw(image)
-
+def get_font(size):
 
     try:
 
-        font_big = ImageFont.truetype(
+        return ImageFont.truetype(
             "arial.ttf",
-            35
-        )
-
-        font = ImageFont.truetype(
-            "arial.ttf",
-            26
-        )
-
-        small_font = ImageFont.truetype(
-            "arial.ttf",
-            20
+            size
         )
 
     except:
 
-        font_big = None
-        font = None
-        small_font = None
+        return ImageFont.load_default()
 
 
+
+# ==========================
+# DRAW AVATAR
+# ==========================
+
+
+async def get_avatar(member):
 
     async with aiohttp.ClientSession() as session:
 
@@ -331,34 +1277,149 @@ async def create_rank_card(member, user):
             str(member.display_avatar.url)
         ) as response:
 
-            avatar_bytes = await response.read()
+            data = await response.read()
 
 
-    avatar = Image.open(
-        BytesIO(avatar_bytes)
+    return Image.open(
+        BytesIO(data)
     ).convert(
         "RGBA"
     )
 
 
+
+# ==========================
+# RING LOADER
+# ==========================
+
+
+def get_ring_path(ring):
+
+    paths = {
+
+        "pride":
+        "assets/rings/pride.png",
+
+
+        "lesbian":
+        "assets/rings/lesbian.png",
+
+
+        "trans":
+        "assets/rings/trans.png"
+
+    }
+
+
+    return paths.get(ring)
+
+
+
+# ==========================
+# CREATE RANK CARD
+# ==========================
+
+
+async def create_rank_card(member, user):
+
+
+    # CARD SIZE
+    image = Image.new(
+        "RGBA",
+        (700, 220),
+        DARK_BACKGROUND
+    )
+
+
+    draw = ImageDraw.Draw(image)
+
+
+
+    # Background
+
+    if user["rank_background"]:
+
+
+        background = await get_image(
+            user["rank_background"]
+        )
+
+
+        if background:
+
+            background = background.resize(
+                (700,220)
+            )
+
+
+            image.paste(
+                background
+            )
+
+
+
+    # Fonts
+
+    big = get_font(32)
+
+    normal = get_font(24)
+
+    small = get_font(18)
+
+
+
+    # Avatar
+
+    avatar = await get_avatar(member)
+
+
     avatar = avatar.resize(
-        (110,110)
+        (100,100)
     )
 
 
     mask = Image.new(
         "L",
-        (110,110),
+        (100,100),
         0
     )
 
 
-    mask_draw = ImageDraw.Draw(mask)
-
-    mask_draw.ellipse(
-        (0,0,110,110),
+    ImageDraw.Draw(mask).ellipse(
+        (0,0,100,100),
         fill=255
     )
+
+
+
+    # Ring
+
+    ring_path = get_ring_path(
+        user["ring"]
+    )
+
+
+    if ring_path and os.path.exists(ring_path):
+
+
+        ring = Image.open(
+            ring_path
+        ).convert(
+            "RGBA"
+        )
+
+
+        ring = ring.resize(
+            (120,120)
+        )
+
+
+        image.paste(
+            ring,
+            (25,70),
+            ring
+        )
+
 
 
     image.paste(
@@ -368,57 +1429,114 @@ async def create_rank_card(member, user):
     )
 
 
-    rank = get_user_rank(
+
+    # Rank
+
+    rank = get_rank(
         member.guild.id,
         member.id
     )
 
 
     draw.text(
-        (35,25),
+
+        (30,20),
+
         f"#{rank}",
+
         fill="white",
-        font=font
+
+        font=big
+
     )
 
+
+
+    # Username
 
     draw.text(
-        (170,70),
+
+        (160,45),
+
         member.name,
+
         fill="white",
-        font=font
+
+        font=normal
+
     )
 
 
+
+    # Title
+
+    if user["title"]:
+
+        draw.text(
+
+            (160,75),
+
+            user["title"],
+
+            fill=(220,220,220),
+
+            font=small
+
+        )
+
+
+
+    # XP BAR
+
     level = user["level"]
+
     xp = user["xp"]
 
 
-    needed = xp_needed_for_level(level)
+    needed = xp_needed_for_level(
+        level
+    )
 
 
-    bar_x = 170
-    bar_y = 115
+    bar_x = 160
+
+    bar_y = 120
+
     bar_width = 450
+
     bar_height = 25
 
 
+
     draw.rounded_rectangle(
+
         (
+
             bar_x,
+
             bar_y,
+
             bar_x + bar_width,
+
             bar_y + bar_height
+
         ),
+
         radius=12,
-        fill=(70,70,70)
+
+        fill=(60,60,70)
+
     )
+
 
 
     progress = 0
 
+
     if needed > 0:
+
         progress = xp / needed
+
 
 
     progress_width = int(
@@ -426,32 +1544,102 @@ async def create_rank_card(member, user):
     )
 
 
+
     draw.rounded_rectangle(
+
         (
+
             bar_x,
+
             bar_y,
+
             bar_x + progress_width,
+
             bar_y + bar_height
+
         ),
+
         radius=12,
+
         fill=RANK_COLOR
+
     )
 
 
+
+    # Rank end image
+
+    if user["rank_end"]:
+
+
+        end_image = await get_image(
+            user["rank_end"]
+        )
+
+
+        if end_image:
+
+
+            end_image = end_image.resize(
+                (35,35)
+            )
+
+
+            image.paste(
+
+                end_image,
+
+                (
+                    bar_x + bar_width - 15,
+                    bar_y - 5
+                ),
+
+                end_image
+
+            )
+
+
+
+    # Stats
+
     draw.text(
-        (170,150),
+
+        (160,160),
+
         f"Level {level}",
+
         fill="white",
-        font=small_font
+
+        font=small
+
     )
 
 
     draw.text(
-        (450,150),
+
+        (300,160),
+
         f"{xp}/{needed} XP",
+
         fill="white",
-        font=small_font
+
+        font=small
+
     )
+
+
+    draw.text(
+
+        (500,160),
+
+        f"{user['messages']} msgs",
+
+        fill="white",
+
+        font=small
+
+    )
+
 
 
     return image
@@ -462,18 +1650,26 @@ async def create_rank_card(member, user):
 # RANK COMMAND
 # ==========================
 
+
 @bot.command()
 async def rank(ctx):
 
+
     user = get_user(
+
         ctx.guild.id,
+
         ctx.author.id
+
     )
 
 
     card = await create_rank_card(
+
         ctx.author,
+
         user
+
     )
 
 
@@ -483,10 +1679,53 @@ async def rank(ctx):
 
 
     await ctx.send(
+
         file=discord.File(
             "rank.png"
         )
-    )
+
+        )
+
+# ==========================
+# BADGE IMAGE SYSTEM
+# ==========================
+
+
+def get_badge_path(badge):
+
+    badges = {
+
+        "Early User":
+        "assets/badges/early_user.png",
+
+        "Top 1":
+        "assets/badges/top1.png",
+
+        "Top 3":
+        "assets/badges/top3.png",
+
+        "Top 10":
+        "assets/badges/top10.png",
+
+        "1K Messages":
+        "assets/badges/1k.png",
+
+        "5K Messages":
+        "assets/badges/5k.png",
+
+        "20K Messages":
+        "assets/badges/20k.png",
+
+        "Booster":
+        "assets/badges/booster.png",
+
+        "Staff":
+        "assets/badges/staff.png"
+
+    }
+
+
+    return badges.get(badge)
 
 
 
@@ -494,150 +1733,241 @@ async def rank(ctx):
 # PROFILE CARD
 # ==========================
 
-PROFILE_BACKGROUND = "https://cdn.discordapp.com/attachments/1506965953492291605/1526513635839574115/d63a7cde3e9669f2f03ddb52ba4c86a4.jpg?ex=6a574c1c&is=6a55fa9c&hm=9d3e6eae007724f05fb7560e79aa7987e4232be4b9e907679fa12e4388ceafe6&"
-
-async def download_image(url):
-
-    async with aiohttp.ClientSession() as session:
-
-        async with session.get(url) as response:
-
-            image_bytes = await response.read()
-
-    return Image.open(
-        BytesIO(image_bytes)
-    ).convert(
-        "RGB"
-    )
-
 
 async def create_profile_card(member, user):
 
-    image = await download_image(
-        PROFILE_BACKGROUND
+
+    image = Image.new(
+
+        "RGBA",
+
+        (900,900),
+
+        (20,20,25)
+
     )
 
-    image = image.resize(
-        (900,900)
-    )
+
+    # Background
+
+    if user["profile_background"]:
+
+
+        background = await get_image(
+
+            user["profile_background"]
+
+        )
+
+
+        if background:
+
+            background = background.resize(
+                (900,900)
+            )
+
+            image.paste(
+                background
+            )
+
+
 
     draw = ImageDraw.Draw(image)
 
 
-    try:
+    title_font = get_font(45)
 
-        title_font = ImageFont.truetype(
-            "arial.ttf",
-            45
-        )
+    font = get_font(28)
 
-        font = ImageFont.truetype(
-            "arial.ttf",
-            30
-        )
+    small = get_font(22)
 
-        small_font = ImageFont.truetype(
-            "arial.ttf",
-            24
-        )
 
-    except:
 
-        title_font = None
-        font = None
-        small_font = None
+    # Avatar
+
+    avatar = await get_avatar(member)
+
+
+    avatar = avatar.resize(
+        (180,180)
+    )
+
+
+    mask = Image.new(
+        "L",
+        (180,180),
+        0
+    )
+
+
+    ImageDraw.Draw(mask).ellipse(
+
+        (0,0,180,180),
+
+        fill=255
+
+    )
+
+
+    image.paste(
+
+        avatar,
+
+        (70,80),
+
+        mask
+
+    )
+
+
+
+    # Username
 
     draw.text(
-        (260,80),
+
+        (300,100),
+
         member.name,
+
         fill="white",
+
         font=title_font
+
     )
 
 
-    status = user.get(
-        "status",
-        ""
-    )
 
+    # Title
 
-    if status:
+    if user["title"]:
+
 
         draw.text(
-            (260,140),
-            str(status),
+
+            (300,170),
+
+            user["title"],
+
             fill=(230,230,230),
-            font=small_font
+
+            font=small
+
         )
 
 
+
+    # Stats
+
+
     draw.text(
-        (60,350),
+
+        (80,330),
+
         f"Level: {user['level']}",
+
         fill="white",
+
         font=font
+
     )
 
 
     draw.text(
-        (60,420),
+
+        (80,390),
+
         f"XP: {user['xp']}",
+
         fill="white",
+
         font=font
+
     )
 
 
     draw.text(
-        (60,490),
+
+        (80,450),
+
         f"Messages: {user['messages']}",
+
         fill="white",
+
         font=font
+
     )
 
 
-    prestige = int(
-        user.get(
-            "prestige",
-            0
-        )
-    )
+
+    # Prestige
 
 
-    stars = "<3" * prestige
+    stars = "⭐" * user["prestige"]
+
 
     if not stars:
+
         stars = "None"
 
 
+
     draw.text(
-        (60,560),
+
+        (80,510),
+
         f"Prestige: {stars}",
+
         fill="white",
+
         font=font
+
     )
 
 
-    badges = user.get(
-        "badges",
-        []
-    )
+
+    # Badges
 
 
-    badge_text = ", ".join(
-        badges
-    )
+    x = 80
+
+    y = 620
 
 
-    if not badge_text:
-        badge_text = "No badges"
+
+    for badge in user["badges"]:
 
 
-    draw.text(
-        (60,640),
-        f"Badges: {badge_text}",
-        fill="white",
-        font=small_font
-    )
+        path = get_badge_path(badge)
+
+
+        if path and os.path.exists(path):
+
+
+            icon = Image.open(
+                path
+            ).convert(
+                "RGBA"
+            )
+
+
+            icon = icon.resize(
+                (70,70)
+            )
+
+
+            image.paste(
+
+                icon,
+
+                (x,y),
+
+                icon
+
+            )
+
+
+            x += 90
+
 
 
     return image
@@ -648,18 +1978,26 @@ async def create_profile_card(member, user):
 # PROFILE COMMAND
 # ==========================
 
+
 @bot.command()
 async def profile(ctx):
 
+
     user = get_user(
+
         ctx.guild.id,
+
         ctx.author.id
+
     )
 
 
     card = await create_profile_card(
+
         ctx.author,
+
         user
+
     )
 
 
@@ -669,117 +2007,81 @@ async def profile(ctx):
 
 
     await ctx.send(
+
         file=discord.File(
             "profile.png"
         )
+
     )
-    # ==========================
+
+
+
+# ==========================
 # LEADERBOARD
 # ==========================
 
-class LeaderboardButton(discord.ui.View):
 
-    def __init__(self, guild_id):
-
-        super().__init__(
-            timeout=60
-        )
-
-        self.guild_id = guild_id
-        self.top10 = False
+@bot.command(
+    aliases=["ld"]
+)
+async def leaderboard(ctx):
 
 
-    @discord.ui.button(
-        label="Show Top 10",
-        style=discord.ButtonStyle.blurple
-    )
-    async def leaderboard_button(
-        self,
-        interaction: discord.Interaction,
-        button: discord.ui.Button
-    ):
-
-        self.top10 = not self.top10
-
-        await interaction.response.edit_message(
-            embed=create_leaderboard_embed(
-                self.guild_id,
-                self.top10
-            ),
-            view=self
-        )
-
-
-
-def create_leaderboard_embed(
-    guild_id,
-    top10=False
-):
-
-    guild_data = data.get(
-        str(guild_id),
-        {}
+    server = get_server(
+        ctx.guild.id
     )
 
 
     users = sorted(
-        guild_data.items(),
-        key=lambda x: x[1]["xp"],
+
+        server["users"].items(),
+
+        key=lambda x:
+        x[1]["xp"],
+
         reverse=True
+
     )
 
 
-    amount = 10 if top10 else 3
-
-
     embed = discord.Embed(
-        title="🏆 Server Leaderboard",
+
+        title="🏆 Leaderboard",
+
         color=0xEED5F0
+
     )
 
 
     text = ""
 
 
-    for index, (user_id, info) in enumerate(
-        users[:amount],
-        start=1
-    ):
+    for i,(uid,user) in enumerate(users[:10],1):
+
 
         text += (
-            f"**#{index}** <@{user_id}>\n"
-            f"Level {info['level']} • {info['xp']} XP\n\n"
+
+            f"#{i} <@{uid}> "
+
+            f"Level {user['level']} "
+
+            f"XP {user['xp']}\n"
+
         )
+
 
 
     if not text:
 
-        text = "No users yet."
+        text = "No users yet"
+
 
 
     embed.description = text
 
 
-    return embed
-
-
-
-@bot.command()
-async def leaderboard(ctx):
-
-    embed = create_leaderboard_embed(
-        ctx.guild.id
-    )
-
-
-    view = LeaderboardButton(
-        ctx.guild.id
-    )
-
-
     await ctx.send(
-        embed=embed,
-        view=view
+        embed=embed
     )
 
 
@@ -788,41 +2090,49 @@ async def leaderboard(ctx):
 # SERVER STATS
 # ==========================
 
+
 @bot.command()
 async def serverstats(ctx):
 
-    guild_data = data.get(
-        str(ctx.guild.id),
-        {}
+
+    server = get_server(
+        ctx.guild.id
     )
 
 
     total_messages = sum(
-        user["messages"]
-        for user in guild_data.values()
-    )
 
+        u["messages"]
 
-    total_users = len(
-        guild_data
+        for u in server["users"].values()
+
     )
 
 
     embed = discord.Embed(
-        title="📊 Server Level Stats",
+
+        title="📊 Server Stats",
+
         color=0xEED5F0
+
     )
 
 
     embed.add_field(
-        name="Tracked Members",
-        value=str(total_users)
+
+        name="Members Tracked",
+
+        value=len(server["users"])
+
     )
 
 
     embed.add_field(
-        name="Total Messages",
-        value=str(total_messages)
+
+        name="Messages",
+
+        value=total_messages
+
     )
 
 
@@ -833,100 +2143,91 @@ async def serverstats(ctx):
 
 
 # ==========================
-# ADMIN XP COMMANDS
+# HELP COMMAND
 # ==========================
 
-def is_admin(ctx):
-
-    return ctx.author.guild_permissions.administrator
-
-
 
 @bot.command()
-async def addxp(
-    ctx,
-    member: discord.Member,
-    amount: int
-):
-
-    if not is_admin(ctx):
-        return
+async def help(ctx):
 
 
-    user = get_user(
-        ctx.guild.id,
-        member.id
+    embed = discord.Embed(
+
+        title="Leveling Bot Commands",
+
+        color=0xEED5F0
+
     )
 
 
-    user["xp"] += amount
+    embed.add_field(
 
-    save_data()
+        name="Profile",
+
+        value=
+        ",rank\n,profile\n,leaderboard"
+
+    )
+
+
+    embed.add_field(
+
+        name="Customize",
+
+        value=
+        ",settitle\n,settheme\n,setring\n,setprofilebg"
+
+    )
+
+
+    embed.add_field(
+
+        name="Stats",
+
+        value=
+        ",serverstats"
+
+    )
 
 
     await ctx.send(
-        f"✅ Added {amount} XP to {member.mention}"
+        embed=embed
     )
 
 
 
-@bot.command()
-async def removexp(
-    ctx,
-    member: discord.Member,
-    amount: int
-):
+# ==========================
+# ERROR HANDLER
+# ==========================
 
-    if not is_admin(ctx):
+
+@bot.event
+async def on_command_error(ctx,error):
+
+
+    if isinstance(
+        error,
+        commands.CommandNotFound
+    ):
+
         return
 
 
-    user = get_user(
-        ctx.guild.id,
-        member.id
-    )
 
+    if isinstance(
+        error,
+        commands.MissingRequiredArgument
+    ):
 
-    user["xp"] = max(
-        0,
-        user["xp"] - amount
-    )
+        await ctx.send(
+            "❌ Missing argument."
+        )
 
-
-    save_data()
-
-
-    await ctx.send(
-        f"✅ Removed {amount} XP from {member.mention}"
-    )
-
-
-
-@bot.command()
-async def setxp(
-    ctx,
-    member: discord.Member,
-    amount: int
-):
-
-    if not is_admin(ctx):
         return
 
 
-    user = get_user(
-        ctx.guild.id,
-        member.id
-    )
 
-
-    user["xp"] = amount
-
-    save_data()
-
-
-    await ctx.send(
-        f"✅ Set {member.mention}'s XP to {amount}"
-    )
+    print(error)
 
 
 
@@ -934,8 +2235,10 @@ async def setxp(
 # START BOT
 # ==========================
 
+
 print(
     "Starting bot..."
 )
+
 
 bot.run(TOKEN)
