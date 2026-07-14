@@ -2440,6 +2440,50 @@ async def setlevelchannel(ctx, channel: discord.TextChannel):
     await ctx.send(
         f"✅ Level messages will now go to {channel.mention}"
     )
+
+
+@bot.command()
+@is_owner()
+async def setlevelrole(ctx, level: int, role: discord.Role):
+
+    server = get_server(ctx.guild.id)
+
+    server["settings"]["level_roles"][str(level)] = role.id
+
+    save_data()
+
+    await ctx.send(
+        f"✅ Successfully set **Level {level}** reward role to {role.mention}"
+    )
+
+
+@setlevelrole.error
+async def setlevelrole_error(ctx, error):
+
+    if isinstance(error, commands.MissingRequiredArgument):
+
+        await ctx.send(
+            "❌ Incorrect usage!\n"
+            "Correct usage:\n"
+            "`,setlevelrole <level> <role>`\n\n"
+            "Example:\n"
+            "`,setlevelrole 10 @Level10`"
+        )
+
+    elif isinstance(error, commands.BadArgument):
+
+        await ctx.send(
+            "❌ Invalid level or role!\n"
+            "Make sure you enter a number and mention a real role.\n\n"
+            "Example:\n"
+            "`,setlevelrole 10 @Level10`"
+        )
+
+    elif isinstance(error, commands.CheckFailure):
+
+        await ctx.send(
+            "❌ You must be the server owner to use this command."
+        )
 # ==========================
 # START BOT
 # ==========================
