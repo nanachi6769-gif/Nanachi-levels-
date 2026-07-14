@@ -987,17 +987,10 @@ draw.text(
     )
 
 
-    draw.text(
-
-        (60,490),
-
-        f"Server Rank: #{rank}",
-
-        fill="white",
-
-        font=font
-
-    )
+rank = get_user_rank(
+    member.guild.id,
+    member.id
+)
 
 
 
