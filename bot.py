@@ -540,8 +540,8 @@ async def on_message(message):
     leveled = check_level(user)
 
 
-    if leveled:
-        
+if leveled:
+
     server = get_server(message.guild.id)
 
     roles = server["settings"]["level_roles"]
