@@ -18,16 +18,23 @@ if not os.path.exists(DATA_FILE):
     with open(DATA_FILE, "w") as f:
         json.dump({}, f)
 
+
 def load_data():
     with open(DATA_FILE, "r") as f:
         return json.load(f)
+
 
 def save_data(data):
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
+
+# Level curve
+# 20 XP per message
+# Level 100 ≈ 250,000 messages
 def xp_needed(level):
-    return 100 + (-9.629 * level) + (9.629 * (level ** 2))
+    return int(500 * (level ** 2))
+
 
 def get_user(data, guild_id, user_id):
     guild_id = str(guild_id)
@@ -45,22 +52,32 @@ def get_user(data, guild_id, user_id):
 
     return data[guild_id][user_id]
 
+
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
+
 
 @bot.event
 async def on_message(message):
     if message.author.bot:
         return
 
+    if message.guild is None:
+        return
+
     data = load_data()
-    user = get_user(data, message.guild.id, message.author.id)
+
+    user = get_user(
+        data,
+        message.guild.id,
+        message.author.id
+    )
 
     user["messages"] += 1
-    user["xp"] += 12.5
+    user["xp"] += 20
 
-    while user["level"] < 100 and user["xp"] >= xp_needed(user["level"]):
+    while user["xp"] >= xp_needed(user["level"]):
         user["xp"] -= xp_needed(user["level"])
         user["level"] += 1
 
@@ -72,121 +89,231 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-def progress_bar(current, needed, length=20):
+
+def progress_bar(current, needed, length=28):
     percent = current / needed if needed > 0 else 0
     filled = int(length * percent)
-    return "█" * filled + "░" * (length - filled)
 
-
-@bot.command(name="level")
+    return "▰" * filled + "▱" * (length - filled)
+    @bot.command(name="level")
 async def level(ctx, member: discord.Member = None):
 
     if member is None:
         member = ctx.author
 
     data = load_data()
-    user = get_user(data, ctx.guild.id, member.id)
 
-    level = user["level"]
+    user = get_user(
+        data,
+        ctx.guild.id,
+        member.id
+    )
+
+    current_level = user["level"]
     xp = user["xp"]
     messages = user["messages"]
 
-    needed = xp_needed(level)
-    remaining = max(0, needed - xp)
+    needed = xp_needed(current_level)
 
-    bar = progress_bar(xp, needed)
+    remaining_xp = max(0, needed - xp)
 
-    embed = discord.Embed(
-        title=f"{member.display_name}'s Level",
-        color=discord.Color.blurple()
+    messages_left = max(
+        0,
+        int((remaining_xp / 20) + 0.99)
     )
 
-    embed.set_thumbnail(url=member.display_avatar.url)
+    # leaderboard position
+    guild_data = data.get(str(ctx.guild.id), {})
 
-    embed.add_field(
-        name="⭐ Level",
-        value=f"**{level}**",
-        inline=True
-    )
+    ranking = []
 
-    embed.add_field(
-        name="💬 Messages",
-        value=f"**{messages:,}**",
-        inline=True
-    )
-
-    embed.add_field(
-        name="📈 XP",
-        value=f"**{xp:.1f} / {needed:.1f} XP**",
-        inline=False
-    )
-
-    embed.add_field(
-        name="📊 Progress",
-        value=f"`{bar}`\n{(xp/needed)*100:.1f}% Complete",
-        inline=False
-    )
-
-    embed.add_field(
-        name="⏳ XP Remaining",
-        value=f"**{remaining:.1f} XP**",
-        inline=False
-    )
-
-    embed.set_footer(
-        text="Level System • Max Level 100"
-    )
-
-    await ctx.send(embed=embed)
-    
-@bot.command(name="rank")
-async def rank(ctx):
-    await level(ctx)
-
-@bot.command(name="leaderboard", aliases=["lb"])
-async def leaderboard(ctx):
-
-    data = load_data()
-
-    guild = data.get(str(ctx.guild.id), {})
-
-    leaderboard = []
-
-    for user_id, stats in guild.items():
-        member = ctx.guild.get_member(int(user_id))
-
-        if member is not None:
-            leaderboard.append(
-                (
-                    member.display_name,
-                    stats["level"],
-                    stats["messages"]
-                )
+    for uid, stats in guild_data.items():
+        ranking.append(
+            (
+                uid,
+                stats["level"],
+                stats["messages"]
             )
+        )
 
-    leaderboard.sort(
+    ranking.sort(
         key=lambda x: (x[1], x[2]),
         reverse=True
     )
 
+    position = 1
+
+    for index, item in enumerate(ranking, start=1):
+        if item[0] == str(member.id):
+            position = index
+            break
+
+
+    bar = progress_bar(xp, needed)
+
+    percent = int((xp / needed) * 100)
+
+
     embed = discord.Embed(
-        title="🏆 Server Leaderboard",
-        color=discord.Color.gold()
+        color=discord.Color.blurple()
     )
 
-    if len(leaderboard) == 0:
-        embed.description = "No users have earned XP yet."
 
-    else:
-        text = ""
+    embed.set_thumbnail(
+        url=member.display_avatar.url
+    )
 
-        for i, (name, level, messages) in enumerate(leaderboard[:10], start=1):
-            text += f"**{i}.** {name}\n⭐ Level **{level}** • 💬 {messages:,} messages\n\n"
 
-        embed.description = text
+    embed.description = (
+        f"**{member.name}**\n"
+        f"━━━━━━━━━━━━━━━━\n"
+        f"🏆 Server Rank: **#{position}**\n\n"
+        f"`{bar}`\n"
+        f"**{xp:,.0f} / {needed:,.0f} XP**  •  **{percent}%**\n\n"
+        f"⭐ Level **{current_level}**\n"
+        f"💬 Messages **{messages:,}**\n"
+        f"📨 Messages until next level: **{messages_left:,}**"
+    )
+
+
+    embed.set_footer(
+        text="Level System"
+    )
+
 
     await ctx.send(embed=embed)
 
 
-print("Starting bot...")
-bot.run(TOKEN)
+
+@bot.command(name="rank")
+async def rank(ctx):
+    await level(ctx)
+    import discord
+from discord.ui import View, Button
+
+
+class LeaderboardView(View):
+    def __init__(self, top10):
+        super().__init__(timeout=60)
+        self.top10 = top10
+
+
+    @discord.ui.button(
+        label="Show Top 10",
+        style=discord.ButtonStyle.blurple
+    )
+    async def show_top10(
+        self,
+        interaction: discord.Interaction,
+        button: discord.ui.Button
+    ):
+
+        text = ""
+
+        for i, user in enumerate(
+            self.top10[:10],
+            start=1
+        ):
+            member, level, messages, xp = user
+
+            text += (
+                f"**{i}.** {member.mention}\n"
+                f"⭐ Level **{level}** • "
+                f"💬 {messages:,} messages • "
+                f"✨ {xp:,.0f} XP\n\n"
+            )
+
+
+        embed = discord.Embed(
+            title="🏆 Server Leaderboard - Top 10",
+            description=text,
+            color=discord.Color.gold()
+        )
+
+
+        await interaction.response.edit_message(
+            embed=embed,
+            view=None
+        )
+
+
+
+@bot.command(name="leaderboard", aliases=["ld"])
+async def leaderboard(ctx):
+
+    data = load_data()
+
+    guild = data.get(
+        str(ctx.guild.id),
+        {}
+    )
+
+
+    leaderboard = []
+
+
+    for user_id, stats in guild.items():
+
+        member = ctx.guild.get_member(
+            int(user_id)
+        )
+
+        if member:
+
+            leaderboard.append(
+                (
+                    member,
+                    stats["level"],
+                    stats["messages"],
+                    stats["xp"]
+                )
+            )
+
+
+    leaderboard.sort(
+        key=lambda x: (
+            x[1],
+            x[2],
+            x[3]
+        ),
+        reverse=True
+    )
+
+
+    if len(leaderboard) == 0:
+
+        await ctx.send(
+            "No users have earned XP yet."
+        )
+        return
+
+
+    text = ""
+
+
+    for i, user in enumerate(
+        leaderboard[:3],
+        start=1
+    ):
+
+        member, level, messages, xp = user
+
+        text += (
+            f"**{i}.** {member.mention}\n"
+            f"⭐ Level **{level}** • "
+            f"💬 {messages:,} messages • "
+            f"✨ {xp:,.0f} XP\n\n"
+        )
+
+
+    embed = discord.Embed(
+        title="🏆 Server Leaderboard",
+        description=text,
+        color=discord.Color.gold()
+    )
+
+
+    await ctx.send(
+        embed=embed,
+        view=LeaderboardView(leaderboard)
+            )
