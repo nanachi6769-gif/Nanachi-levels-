@@ -2,7 +2,6 @@ import os
 import discord
 from discord.ext import commands
 import json
-
 TOKEN = os.getenv("DISCORD_TOKEN")
 
 intents = discord.Intents.default()
