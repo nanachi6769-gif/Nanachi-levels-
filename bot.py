@@ -978,13 +978,10 @@ draw.text(
 
     # Rank
 
-    rank = get_user_rank(
-
-        member.guild.id,
-
-        member.id
-
-    )
+rank = get_user_rank(
+    member.guild.id,
+    member.id
+)
 
 
 rank = get_user_rank(
