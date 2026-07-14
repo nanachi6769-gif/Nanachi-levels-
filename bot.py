@@ -1033,21 +1033,14 @@ else:
 
 
 
-    draw.text(
+draw.text(
+    (60, 640),
+    f"Badges: {badge_text}",
+    fill="white",
+    font=small_font
+)
 
-        (60,640),
-
-        f"Badges: {badge_text}",
-
-        fill="white",
-
-        font=small_font
-
-    )
-
-
-
-    return image
+return image
 
 
 
