@@ -359,10 +359,16 @@ draw.text(
     font=font,
     fill="white"
 )
-    file = discord.File(
-        save_image(img),
-        filename="level.png"
-    )
+
+file = discord.File(
+    save_image(img),
+    filename="level.png"
+)
+
+
+await ctx.send(
+    file=file
+)
 
 
     await ctx.send(
