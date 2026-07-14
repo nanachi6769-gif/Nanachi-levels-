@@ -494,8 +494,7 @@ async def rank(ctx):
 # PROFILE CARD
 # ==========================
 
-PROFILE_BACKGROUND = "https://cdn.discordapp.com/attachments/1506965953492291605/1526406076063289494/927de7134c3fe3859fe18946867366ec.jpg"
-
+PROFILE_BACKGROUND = "https://cdn.discordapp.com/attachments/1506965953492291605/1526513635839574115/d63a7cde3e9669f2f03ddb52ba4c86a4.jpg?ex=6a574c1c&is=6a55fa9c&hm=9d3e6eae007724f05fb7560e79aa7987e4232be4b9e907679fa12e4388ceafe6&"
 
 async def download_image(url):
 
@@ -604,7 +603,7 @@ async def create_profile_card(member, user):
     )
 
 
-    stars = "⭐" * prestige
+    stars = "<3" * prestige
 
     if not stars:
         stars = "None"
