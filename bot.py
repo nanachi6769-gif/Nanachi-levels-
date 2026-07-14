@@ -318,3 +318,6 @@ async def leaderboard(ctx):
         embed=embed,
         view=LeaderboardView(leaderboard)
             )
+
+print("Starting bot...")
+bot.run(TOKEN)
