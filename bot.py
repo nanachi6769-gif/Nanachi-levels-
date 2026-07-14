@@ -371,17 +371,8 @@ await ctx.send(
 )
 
 
-    await ctx.send(
-        file=file
-    )
-
-
-
-
-
 @bot.command(name="rank")
 async def rank(ctx):
-
     await level(ctx)
 
 
