@@ -179,7 +179,7 @@ async def on_ready():
     print(
         "Leveling system online!"
     )
-    # ==========================
+# ==========================
 # LEVEL ROLE SETTINGS
 # ==========================
 
@@ -187,7 +187,6 @@ LEVEL_ROLES_FILE = "level_roles.json"
 
 
 def load_level_roles():
-
     if not os.path.exists(LEVEL_ROLES_FILE):
         return {}
 
@@ -195,9 +194,7 @@ def load_level_roles():
         return json.load(file)
 
 
-
 def save_level_roles():
-
     with open(LEVEL_ROLES_FILE, "w") as file:
         json.dump(
             level_roles,
