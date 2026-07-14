@@ -993,14 +993,12 @@ rank = get_user_rank(
 
     # Prestige stars
 
-stars = "⭐" * int(user.get("prestige", 0))
+prestige = int(user.get("prestige", 0))
 
-
-    if stars == "":
-
-        stars = "None"
-
-
+if prestige > 0:
+    stars = "⭐" * prestige
+else:
+    stars = "None"
 
     draw.text(
 
