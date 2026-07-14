@@ -129,18 +129,17 @@ def create_server():
 
         "settings": {
 
-            "level_message":
-            "{user} reached level {level}!",
+    "level_message":
+    "{user} reached level {level}",
 
+    "level_title":
+    "Level {level}",
 
-            "level_title":
-            "Level {level}",
+    "xp_channels": [],
 
+"level_channel": None,
 
-            "xp_channels": [],
-
-
-            "xp_category": None,
+"xp_category": None,
 
 
             "level_roles": {},
@@ -547,12 +546,52 @@ async def on_message(message):
 
     if leveled:
 
+    server = get_server(message.guild.id)
 
-        await message.channel.send(
+    roles = server["settings"]["level_roles"]
 
-            f"🎉 {message.author.mention} reached level {user['level']}!"
+    current_level = str(user["level"])
 
+
+    # Remove old level roles
+    for level, role_id in roles.items():
+
+        role = message.guild.get_role(role_id)
+
+        if role and role in message.author.roles:
+
+            await message.author.remove_roles(role)
+
+
+    # Give new level role
+    if current_level in roles:
+
+        new_role = message.guild.get_role(
+            roles[current_level]
         )
+
+        if new_role:
+
+            await message.author.add_roles(new_role)
+
+
+    # Send level message
+    channel_id = server["settings"]["level_channel"]
+
+    if channel_id:
+
+        channel = message.guild.get_channel(channel_id)
+
+    else:
+
+        channel = message.channel
+
+
+    await channel.send(
+
+        f"🎉 {message.author.mention} reached level {user['level']}!"
+
+    )
 
 
 
@@ -2386,6 +2425,21 @@ async def admin(ctx):
 async def admin_error(ctx, error):
     if isinstance(error, commands.MissingPermissions):
         await ctx.send("❌ You need Administrator permission to use this command.")
+
+
+@bot.command()
+@is_owner()
+async def setlevelchannel(ctx, channel: discord.TextChannel):
+
+    server = get_server(ctx.guild.id)
+
+    server["settings"]["level_channel"] = channel.id
+
+    save_data()
+
+    await ctx.send(
+        f"✅ Level messages will now go to {channel.mention}"
+    )
 # ==========================
 # START BOT
 # ==========================
