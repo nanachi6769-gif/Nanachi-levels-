@@ -412,7 +412,10 @@ async def level(ctx, member: discord.Member = None):
 async def rank(ctx):
 
     await level(ctx)
-    class LeaderboardView(View):
+
+
+
+class LeaderboardView(View):
 
     def __init__(self, leaderboard):
 
