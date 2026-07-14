@@ -540,23 +540,23 @@ async def on_message(message):
     leveled = check_level(user)
 
 
-if leveled:
+    if leveled:
 
-    server = get_server(message.guild.id)
+        server = get_server(message.guild.id)
 
-    roles = server["settings"]["level_roles"]
+        roles = server["settings"]["level_roles"]
 
-    current_level = str(user["level"])
+        current_level = str(user["level"])
 
 
-    # Remove old level roles
-    for level, role_id in roles.items():
+        # Remove old level roles
+        for level, role_id in roles.items():
 
-        role = message.guild.get_role(role_id)
+            role = message.guild.get_role(role_id)
 
-        if role and role in message.author.roles:
+            if role and role in message.author.roles:
 
-            await message.author.remove_roles(role)
+                await message.author.remove_roles(role)
 
 
     # Give new level role
