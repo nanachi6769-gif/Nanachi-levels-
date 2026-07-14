@@ -967,12 +967,12 @@ draw.text(
 
     # Messages
 
-    draw.text(
-        (60,420),
-        f"Messages: {user['messages']}",
-        fill="white",
-        font=font
-    )
+draw.text(
+    (60, 420),
+    f"Messages: {user.get('messages', 0)}",
+    fill="white",
+    font=font
+)
 
 
 
