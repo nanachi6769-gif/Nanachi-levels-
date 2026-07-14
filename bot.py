@@ -945,16 +945,16 @@ async def create_profile_card(member, user):
 
     # Level #
 
-status = super.get("status", "")
+def create_profile_card(user, member):
+    status = user.get("status", "")
 
-if status:
-    draw.text(
-        (260, 140),
-        str(status),
-        fill=(230, 230, 230),
-        font=small_font
-    )
-
+    if status:
+        draw.text(
+            (260, 140),
+            str(status),
+            fill=(230, 230, 230),
+            font=small_font
+        )
 
 
     # XP
