@@ -513,9 +513,9 @@ class LeaderboardTopView(View):
 
             text += (
                 f"**{i}.** {member.mention}\n"
-                f"⭐ Level **{level}** • "
-                f"💬 {messages:,} messages • "
-                f"✨ {xp:,} XP\n\n"
+                f" Level **{level}** • "
+                f" {messages:,} messages • "
+                f" {xp:,} XP\n\n"
             )
 
 
@@ -617,9 +617,9 @@ async def leaderboard(ctx):
 
         text += (
             f"**{i}.** {member.mention}\n"
-            f"⭐ Level **{level}** • "
-            f"💬 {messages:,} messages • "
-            f"✨ {xp:,} XP\n\n"
+            f" Level **{level}** • "
+            f" {messages:,} messages • "
+            f" {xp:,} XP\n\n"
         )
 
 
