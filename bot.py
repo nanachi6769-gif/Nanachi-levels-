@@ -945,6 +945,8 @@ async def create_profile_card(member, user):
 
     # Level #
 
+status = user.get("status", "")
+
 if status:
     draw.text(
         (260, 140),
