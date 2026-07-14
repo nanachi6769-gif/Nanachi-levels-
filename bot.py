@@ -946,9 +946,9 @@ async def create_profile_card(member, user):
     # Level
 
 draw.text(
-    (260,140),
-    status,
-    fill=(230,230,230),
+    (260, 140),
+    str(status),
+    fill=(230, 230, 230),
     font=small_font
 )
 
