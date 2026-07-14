@@ -215,185 +215,154 @@ async def level(ctx, member: discord.Member = None):
 
 
 
-    # Card background
-    img = Image.new(
-        "RGBA",
-        (900,360),
-        (20,20,25,255)
+# Card
+img = Image.new(
+    "RGBA",
+    (900, 260),
+    (20, 20, 25, 255)
+)
+
+draw = ImageDraw.Draw(img)
+
+
+# Make avatar circular
+avatar = avatar.resize((120, 120))
+
+mask = Image.new(
+    "L",
+    (120, 120),
+    0
+)
+
+mask_draw = ImageDraw.Draw(mask)
+
+mask_draw.ellipse(
+    (0, 0, 120, 120),
+    fill=255
+)
+
+img.paste(
+    avatar,
+    (50, 90),
+    mask
+)
+
+
+# Fonts
+try:
+    title_font = ImageFont.truetype(
+        "arial.ttf",
+        32
     )
 
-
-    draw = ImageDraw.Draw(img)
-
-
-
-    # Avatar
-    img.paste(
-        avatar,
-        (60,100),
-        avatar
+    font = ImageFont.truetype(
+        "arial.ttf",
+        22
     )
 
-
-
-    try:
-
-        title_font = ImageFont.truetype(
-            "arial.ttf",
-            45
-        )
-
-        font = ImageFont.truetype(
-            "arial.ttf",
-            30
-        )
-
-        small_font = ImageFont.truetype(
-            "arial.ttf",
-            24
-        )
-
-    except:
-
-        title_font = None
-        font = None
-        small_font = None
+except:
+    title_font = None
+    font = None
 
 
 
+# Server rank above avatar
 
-    # Username
-
-    draw.text(
-        (270,45),
-        member.name,
-        font=title_font,
-        fill="white"
-    )
-
-
-
-    # Rank position
-
-    guild_data = data.get(
-        str(ctx.guild.id),
-        {}
-    )
-
-
-    ranking = []
-
-
-    for uid, stats in guild_data.items():
-
-        ranking.append(
-            (
-                uid,
-                stats["level"],
-                stats["messages"]
-            )
-        )
-
-
-    ranking.sort(
-        key=lambda x:(x[1],x[2]),
-        reverse=True
-    )
-
-
-    position = 1
-
-
-    for i, item in enumerate(
-        ranking,
-        start=1
-    ):
-
-        if item[0] == str(member.id):
-
-            position = i
-            break
+draw.text(
+    (50, 35),
+    f"🏆 #{position}",
+    font=font,
+    fill="white"
+)
 
 
 
-    draw.text(
-        (270,95),
-        f"#{position} Server Rank",
-        font=small_font,
-        fill="white"
-    )
+# Username under avatar
+
+draw.text(
+    (45, 215),
+    member.name,
+    font=font,
+    fill="white"
+)
 
 
 
-    # Stats
+# Progress bar
 
-    draw.text(
-        (270,145),
-        f" Level {current_level}",
-        font=font,
-        fill="white"
-    )
+bar_x = 220
+bar_y = 110
 
-
-    draw.text(
-        (270,190),
-        f" {messages:,} Messages",
-        font=font,
-        fill="white"
-    )
-
-
-    draw.text(
-        (270,235),
-        f" {xp:,} / {needed:,} XP",
-        font=font,
-        fill="white"
-    )
+bar_width = 620
+bar_height = 28
 
 
 
-    # Progress bar
+# Level at start of bar
 
-    bar_x = 270
-    bar_y = 310
-
-    bar_width = 520
-    bar_height = 25
-
-
-
-    draw.rounded_rectangle(
-        (
-            bar_x,
-            bar_y,
-            bar_x + bar_width,
-            bar_y + bar_height
-        ),
-        radius=15,
-        fill=(50,50,60)
-    )
+draw.text(
+    (220, 70),
+    f"⭐ Level {current_level}",
+    font=font,
+    fill="white"
+)
 
 
 
-    filled = int(
-        bar_width * percent
-    )
+# XP at end of bar
+
+draw.text(
+    (650, 70),
+    f"{xp:,}/{needed:,} XP",
+    font=font,
+    fill="white"
+)
 
 
 
-    draw.rounded_rectangle(
-        (
-            bar_x,
-            bar_y,
-            bar_x + filled,
-            bar_y + bar_height
-        ),
-        radius=15,
-        fill="#eed5f0"
-    )
+# Background bar
+
+draw.rounded_rectangle(
+    (
+        bar_x,
+        bar_y,
+        bar_x + bar_width,
+        bar_y + bar_height
+    ),
+    radius=15,
+    fill=(60,60,70)
+)
 
 
 
+# Filled bar
+
+filled = int(
+    bar_width * percent
+)
+
+
+draw.rounded_rectangle(
+    (
+        bar_x,
+        bar_y,
+        bar_x + filled,
+        bar_y + bar_height
+    ),
+    radius=15,
+    fill="#eed5f0"
+)
+
+
+
+# Messages under bar
+
+draw.text(
+    (220, 165),
+    f"💬 {messages:,} Messages",
+    font=font,
+    fill="white"
+)
     file = discord.File(
         save_image(img),
         filename="level.png"
