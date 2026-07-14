@@ -1,7 +1,11 @@
 import os
 import discord
 from discord.ext import commands
+from discord.ui import View, Button
 import json
+import io
+import aiohttp
+from PIL import Image, ImageDraw, ImageFont
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
