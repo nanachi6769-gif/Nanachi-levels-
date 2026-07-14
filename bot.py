@@ -1032,7 +1032,6 @@ else:
         badge_text = "No badges"
 
 
-
 draw.text(
     (60, 640),
     f"Badges: {badge_text}",
