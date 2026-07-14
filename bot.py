@@ -505,24 +505,20 @@ async def on_message(message):
     if message.author.bot:
         return
 
-
     if not message.guild:
         return
 
-
-
     user = get_user(
-
         message.guild.id,
-
         message.author.id
-
     )
 
-
     user["xp"] += 1
-
     user["messages"] += 1
+
+    save_data()
+
+    await bot.process_commands(message)
 
 
 
@@ -545,7 +541,7 @@ async def on_message(message):
 
 
     if leveled:
-
+        
     server = get_server(message.guild.id)
 
     roles = server["settings"]["level_roles"]
