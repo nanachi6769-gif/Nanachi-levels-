@@ -2316,6 +2316,76 @@ async def on_command_error(ctx,error):
 
 
 
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def admin(ctx):
+    embed = discord.Embed(
+        title="🛡️ Admin Commands",
+        description="Here are all administrator commands:",
+        color=0xEED5F0
+    )
+
+    embed.add_field(
+        name="⚙️ Level Management",
+        value="""
+`,setlevelrole` - Set a level reward role
+`,editlevelrole` - Edit an existing level role
+`,removelevelrole` - Remove a level role reward
+`,listlevelroles` - View all level roles
+        """,
+        inline=False
+    )
+
+    embed.add_field(
+        name="✨ XP Management",
+        value="""
+`,setxpchannel` - Set channels where XP works
+`,removexpchannel` - Remove XP channel restrictions
+`,listxpchannels` - View XP channels
+`,addxp` - Add XP to a user
+`,removexp` - Remove XP from a user
+        """,
+        inline=False
+    )
+
+    embed.add_field(
+        name="🤖 Auto Moderation Roles",
+        value="""
+`,setautomodrole` - Set AutoMod role
+`,removeautomodrole` - Remove AutoMod role
+`,listautomodroles` - View AutoMod roles
+        """,
+        inline=False
+    )
+
+    embed.add_field(
+        name="📢 Level Messages",
+        value="""
+`,setlevelmessage` - Set level-up message
+`,resetlevelmessage` - Reset level-up message
+        """,
+        inline=False
+    )
+
+    embed.add_field(
+        name="🔧 Server Management",
+        value="""
+`,purge` - Delete messages
+`,lock` - Lock a channel
+`,unlock` - Unlock a channel
+        """,
+        inline=False
+    )
+
+    embed.set_footer(text=f"Requested by {ctx.author}")
+
+    await ctx.send(embed=embed)
+
+
+@admin.error
+async def admin_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send("❌ You need Administrator permission to use this command.")
 # ==========================
 # START BOT
 # ==========================
