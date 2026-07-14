@@ -194,14 +194,14 @@ async def level(ctx, member: discord.Member = None):
     # Stats
     draw.text(
         (270, 140),
-        f"⭐ Level {current_level}",
+        f" Level {current_level}",
         font=font,
         fill="white"
     )
 
     draw.text(
         (270, 180),
-        f"💬 {messages:,} Messages",
+        f" {messages:,} Messages",
         font=font,
         fill="white"
     )
@@ -209,7 +209,7 @@ async def level(ctx, member: discord.Member = None):
 
     draw.text(
         (270, 220),
-        f"✨ {xp:,.0f} / {needed:,.0f} XP",
+        f" {xp:,.0f} / {needed:,.0f} XP",
         font=font,
         fill="white"
     )
@@ -223,14 +223,16 @@ async def level(ctx, member: discord.Member = None):
 
 
     # Background
-    draw.rounded_rectangle(
-        (
-            bar_x,
-            bar_y,
-            bar_x + bar_width,
-            bar_y + bar_height
-        ),
-
+draw.rounded_rectangle(
+    (
+        bar_x,
+        bar_y,
+        bar_x + bar_width,
+        bar_y + bar_height
+    ),
+    radius=15,
+    fill=(50, 50, 60)
+)
 @bot.command(name="rank")
 async def rank(ctx):
     await level(ctx)
