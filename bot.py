@@ -956,12 +956,12 @@ draw.text(
 
     # XP
 
-    draw.text(
-        (60,350),
-        f"XP: {user['xp']}",
-        fill="white",
-        font=font
-    )
+draw.text(
+    (60, 350),
+    f"XP: {user['xp']}",
+    fill="white",
+    font=font
+)
 
 
 
