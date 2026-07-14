@@ -329,7 +329,7 @@ async def level(ctx, member: discord.Member = None):
 
     draw.text(
         (270,145),
-        f"⭐ Level {current_level}",
+        f" Level {current_level}",
         font=font,
         fill="white"
     )
@@ -337,7 +337,7 @@ async def level(ctx, member: discord.Member = None):
 
     draw.text(
         (270,190),
-        f"💬 {messages:,} Messages",
+        f" {messages:,} Messages",
         font=font,
         fill="white"
     )
@@ -345,7 +345,7 @@ async def level(ctx, member: discord.Member = None):
 
     draw.text(
         (270,235),
-        f"✨ {xp:,} / {needed:,} XP",
+        f" {xp:,} / {needed:,} XP",
         font=font,
         fill="white"
     )
