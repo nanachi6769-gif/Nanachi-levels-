@@ -143,8 +143,7 @@ async def level(ctx, member: discord.Member = None):
 async def rank(ctx):
     await level(ctx)
 
-@bot.command(name="leaderboard")
-@bot.command(name="lb")
+@bot.command(name="leaderboard", aliases=["lb"])
 async def leaderboard(ctx):
 
     data = load_data()
