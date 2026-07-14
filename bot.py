@@ -494,13 +494,19 @@ async def rank(ctx):
 # PROFILE CARD
 # ==========================
 
+    PROFILE_BACKGROUND = "https://cdn.discordapp.com/attachments/1506965953492291605/1526406076063289494/927de7134c3fe3859fe18946867366ec.jpg"
+
 async def create_profile_card(member, user):
 
-    image = Image.new(
-        "RGB",
-        (900,900),
-        (20,20,25)
+    image = await download_image(
+        PROFILE_BACKGROUND
     )
+
+    image = image.resize(
+        (900,900)
+    )
+
+    draw = ImageDraw.Draw(image)
 
 
     draw = ImageDraw.Draw(image)
