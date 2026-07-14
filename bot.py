@@ -1823,6 +1823,6 @@ async def help(ctx):
         embed=embed
     )
 
-    print("Starting bot...")
+print("Starting bot...")
 bot.run(TOKEN)
         
