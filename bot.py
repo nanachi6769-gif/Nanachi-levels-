@@ -330,9 +330,8 @@ draw.rounded_rectangle(
         bar_y + bar_height
     ),
     radius=15,
-    fill=(60,60,70)
+    fill=(60, 60, 70)
 )
-
 
 
 # Filled bar
@@ -352,9 +351,6 @@ draw.rounded_rectangle(
     radius=15,
     fill="#eed5f0"
 )
-
-
-
 # Messages under bar
 
 draw.text(
