@@ -945,7 +945,7 @@ async def create_profile_card(member, user):
 
     # Level #
 
-status = suser.get("status", "")
+status = super.get("status", "")
 
 if status:
     draw.text(
