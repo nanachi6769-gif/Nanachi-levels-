@@ -1213,6 +1213,91 @@ DARK_BACKGROUND = (
         )
 
 # ==========================
+# CUSTOMIZE MENU
+# ==========================
+
+
+@bot.command()
+async def customize(ctx):
+
+    embed = discord.Embed(
+        title="🎨 Profile Customization",
+        description="Customize your profile and rank card!",
+        color=0xEED5F0
+    )
+
+
+    embed.add_field(
+        name="🖼️ Backgrounds",
+        value=(
+            "`,setprofilebg <url>`\n"
+            "Change your profile background\n\n"
+            "`,setrankbg <url>`\n"
+            "Change your rank card background\n\n"
+            "`,setrankend <url>`\n"
+            "Change XP bar ending image"
+        ),
+        inline=False
+    )
+
+
+    embed.add_field(
+        name="⭕ Profile Rings",
+        value=(
+            "`,setring pride`\n"
+            "`,setring lesbian`\n"
+            "`,setring trans`\n"
+            "`,setring none`\n\n"
+            "Add a ring around your profile picture"
+        ),
+        inline=False
+    )
+
+
+    embed.add_field(
+        name="🌌 Themes",
+        value=(
+            "`,settheme arcane`\n"
+            "`,settheme madeinabyss`\n"
+            "`,settheme default`\n\n"
+            "Change your profile style"
+        ),
+        inline=False
+    )
+
+
+    embed.add_field(
+        name="🏷️ Titles",
+        value=(
+            "`,settitle <text>`\n\n"
+            "Add a custom title under your username"
+        ),
+        inline=False
+    )
+
+
+    embed.add_field(
+        name="📊 Preview Commands",
+        value=(
+            "`,rank`\n"
+            "View your Arcane rank card\n\n"
+            "`,profile`\n"
+            "View your full profile card"
+        ),
+        inline=False
+    )
+
+
+    embed.set_footer(
+        text="More cosmetics coming soon ✨"
+    )
+
+
+    await ctx.send(
+        embed=embed
+    )
+
+# ==========================
 # RANK SYSTEM
 # ==========================
 
