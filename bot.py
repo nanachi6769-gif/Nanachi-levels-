@@ -137,12 +137,12 @@ async def level(ctx, member: discord.Member = None):
     )
 
     await ctx.send(embed=embed)
-
-
+    
 @bot.command(name="rank")
 async def rank(ctx):
     await level(ctx)
-  @bot.command(name="leaderboard")
+
+@bot.command(name="leaderboard")
 @bot.command(name="lb")
 async def leaderboard(ctx):
 
