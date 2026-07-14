@@ -88,7 +88,7 @@ async def on_message(message):
     )
 
     user["messages"] += 1
-    user["xp"] += 20
+    user["xp"] += 1
 
     while user["xp"] >= xp_needed_for_level(user["level"]):
         user["xp"] -= xp_needed_for_level(user["level"])
