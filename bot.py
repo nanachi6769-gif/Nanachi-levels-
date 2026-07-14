@@ -116,6 +116,162 @@ async def level(ctx, member: discord.Member = None):
         member = ctx.author
 
     data = load_data()
+    user = get_user(data, ctx.guild.id, member.id)
+
+    current_level = user["level"]
+    xp = user["xp"]
+    messages = user["messages"]
+
+    needed = xp_needed_for_level(current_level)
+
+    percent = min(xp / needed, 1)
+
+    # Download avatar
+    async with aiohttp.ClientSession() as session:
+        async with session.get(str(member.display_avatar.url)) as resp:
+            avatar_bytes = await resp.read()
+
+    avatar = Image.open(io.BytesIO(avatar_bytes)).convert("RGBA")
+    avatar = avatar.resize((180, 180))
+
+
+    # Card
+    img = Image.new(
+        "RGBA",
+        (900, 350),
+        (20, 20, 25, 255)
+    )
+
+    draw = ImageDraw.Draw(img)
+
+
+    # Avatar
+    img.paste(
+        avatar,
+        (50, 80),
+        avatar
+    )
+
+
+    # Fonts
+    try:
+        title_font = ImageFont.truetype(
+            "arial.ttf",
+            45
+        )
+
+        font = ImageFont.truetype(
+            "arial.ttf",
+            30
+        )
+
+    except:
+        title_font = None
+        font = None
+
+
+    # Username
+    draw.text(
+        (270, 55),
+        member.name,
+        font=title_font,
+        fill="white"
+    )
+
+
+    # Underline
+    draw.line(
+        (270, 115, 800, 115),
+        fill="white",
+        width=3
+    )
+
+
+    # Stats
+    draw.text(
+        (270, 140),
+        f"⭐ Level {current_level}",
+        font=font,
+        fill="white"
+    )
+
+    draw.text(
+        (270, 180),
+        f"💬 {messages:,} Messages",
+        font=font,
+        fill="white"
+    )
+
+
+    draw.text(
+        (270, 220),
+        f"✨ {xp:,.0f} / {needed:,.0f} XP",
+        font=font,
+        fill="white"
+    )
+
+
+    # Progress bar
+    bar_x = 270
+    bar_y = 290
+    bar_width = 520
+    bar_height = 25
+
+
+    # Background
+    draw.rounded_rectangle(
+        (
+            bar_x,
+            bar_y,
+            bar_x + bar_width,
+            bar_y + bar_height
+        ),
+        radius=15,
+        fill=(50,50,60)
+    )
+
+
+    # Filled part #eed5f0
+    filled = int(bar_width * percent)
+
+    draw.rounded_rectangle(
+        (
+            bar_x,
+            bar_y,
+            bar_x + filled,
+            bar_y + bar_height
+        ),
+        radius=15,
+        fill="#eed5f0"
+    )
+
+
+    # Send image
+    file = discord.File(
+        io.BytesIO(
+            save_image(img)
+        ),
+        filename="level.png"
+    )
+
+    await ctx.send(file=file)
+
+
+
+def save_image(img):
+    buffer = io.BytesIO()
+    img.save(
+        buffer,
+        format="PNG"
+    )
+    buffer.seek(0)
+    return buffer
+async def level(ctx, member: discord.Member = None):
+
+    if member is None:
+        member = ctx.author
+
+    data = load_data()
 
     user = get_user(
         data,
