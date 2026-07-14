@@ -95,7 +95,8 @@ def progress_bar(current, needed, length=28):
     filled = int(length * percent)
 
     return "▰" * filled + "▱" * (length - filled)
-    @bot.command(name="level")
+    
+@bot.command(name="level")
 async def level(ctx, member: discord.Member = None):
 
     if member is None:
