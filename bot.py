@@ -67,9 +67,9 @@ async def on_message(message):
             f"🎉 {message.author.mention} leveled up to **Level {user['level']}**!"
         )
 
-save_data(data)
+    save_data(data)
 
-await bot.process_commands(message)
+    await bot.process_commands(message)
 
 def progress_bar(current, needed, length=20):
     percent = current / needed if needed > 0 else 0
