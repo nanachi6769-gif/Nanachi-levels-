@@ -957,16 +957,19 @@ def create_profile_card(user, member):
         )
 
 
-    # XP
+    # XP #
 
-draw.text(
-    (60, 350),
-    f"XP: {user['xp']}",
-    fill="white",
-    font=font
-)
+draw = ImageDraw.Draw(image)
 
+status = user.get("status", "")
 
+if status:
+    draw.text(
+        (260, 140),
+        str(status),
+        fill=(230, 230, 230),
+        font=small_font
+    )
 
     # Messages
 
