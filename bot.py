@@ -7,7 +7,7 @@ import aiohttp
 from io import BytesIO
 
 
-TOKEN = "YOUR_BOT_TOKEN"
+TOKEN = os.getenv("TOKEN")
 PREFIX = ","
 
 intents = discord.Intents.default()
