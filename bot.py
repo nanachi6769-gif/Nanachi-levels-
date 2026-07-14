@@ -140,11 +140,12 @@ async def on_message(message):
         )
 
 
-    save_data(data)
-
+        save_data(data)
 
     await bot.process_commands(message)
-    def save_image(img):
+
+
+def save_image(img):
 
     buffer = io.BytesIO()
 
